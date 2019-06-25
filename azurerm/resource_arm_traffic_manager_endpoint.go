@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 
 	"github.com/Azure/azure-sdk-for-go/services/trafficmanager/mgmt/2018-04-01/trafficmanager"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -127,6 +128,12 @@ func resourceArmTrafficManagerEndpoint() *schema.Resource {
 				},
 				ForceNew: true,
 				Optional: true,
+			},
+
+			"listed_subnets": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
 			"subnet": {
@@ -382,6 +389,28 @@ func getArmTrafficManagerEndpointProperties(d *schema.ResourceData) *trafficmana
 			subnetNew = trafficmanager.EndpointPropertiesSubnetsItem{
 				First: &subnetFirst,
 				Scope: &subnetScope,
+			}
+		}
+		subnetMappings = append(subnetMappings, subnetNew)
+	}
+	compact_list := d.Get("listed_subnets").([]interface{})
+	ip_regexp := regexp.MustCompile("([0-9]{1,3}\\.){3}[0-9]{1,3}")
+	mask_regexp := regexp.MustCompile("/[0-9]{1,2}")
+	for _, subnetCompact := range compact_list {
+		ipCompact := ip_regexp.FindAllString(subnetCompact.(string), -1)
+		var subnetNew trafficmanager.EndpointPropertiesSubnetsItem
+		if len(ipCompact) == 1 {
+			subnetMask := mask_regexp.FindString(subnetCompact.(string))[1:]
+			scope, _ := strconv.Atoi(subnetMask)
+			subnetScope := int32(scope)
+			subnetNew = trafficmanager.EndpointPropertiesSubnetsItem{
+				First: &ipCompact[0],
+				Scope: &subnetScope,
+			}
+		} else {
+			subnetNew = trafficmanager.EndpointPropertiesSubnetsItem{
+				First: &ipCompact[0],
+				Last:  &ipCompact[1],
 			}
 		}
 		subnetMappings = append(subnetMappings, subnetNew)
