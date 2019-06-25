@@ -5,6 +5,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/trafficmanager/mgmt/2018-04-01/trafficmanager"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -112,6 +113,12 @@ func resourceArmTrafficManagerEndpoint() *schema.Resource {
 				Computed: true,
 			},
 
+			"string_header": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"custom_header": {
 				Type: schema.TypeList,
 				Elem: &schema.Resource{
@@ -130,7 +137,7 @@ func resourceArmTrafficManagerEndpoint() *schema.Resource {
 				Optional: true,
 			},
 
-			"listed_subnets": {
+			"string_subnet": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -393,10 +400,10 @@ func getArmTrafficManagerEndpointProperties(d *schema.ResourceData) *trafficmana
 		}
 		subnetMappings = append(subnetMappings, subnetNew)
 	}
-	compact_list := d.Get("listed_subnets").([]interface{})
+	subnet_compact_list := d.Get("string_subnet").([]interface{})
 	ip_regexp := regexp.MustCompile("([0-9]{1,3}\\.){3}[0-9]{1,3}")
 	mask_regexp := regexp.MustCompile("/[0-9]{1,2}")
-	for _, subnetCompact := range compact_list {
+	for _, subnetCompact := range subnet_compact_list {
 		ipCompact := ip_regexp.FindAllString(subnetCompact.(string), -1)
 		var subnetNew trafficmanager.EndpointPropertiesSubnetsItem
 		if len(ipCompact) == 1 {
@@ -428,6 +435,15 @@ func getArmTrafficManagerEndpointProperties(d *schema.ResourceData) *trafficmana
 		headerNew := trafficmanager.EndpointPropertiesCustomHeadersItem{
 			Name:  &headerName,
 			Value: &headerValue,
+		}
+		headerMappings = append(headerMappings, headerNew)
+	}
+	header_compact_list := d.Get("string_header").([]interface{})
+	for _, headerCompact := range header_compact_list {
+		components := strings.Split(headerCompact.(string), ":")
+		headerNew := trafficmanager.EndpointPropertiesCustomHeadersItem{
+			Name:  &components[0],
+			Value: &components[1],
 		}
 		headerMappings = append(headerMappings, headerNew)
 	}
