@@ -201,9 +201,8 @@ func TestAccAzureRMTrafficManagerEndpoint_updateSubnets(t *testing.T) {
 					testCheckAzureRMTrafficManagerEndpointExists(firstResourceName),
 					testCheckAzureRMTrafficManagerEndpointExists(secondResourceName),
 					resource.TestCheckResourceAttr(firstResourceName, "subnet.#", "0"),
-					resource.TestCheckResourceAttr(firstResourceName, "subnet.0.first", "12.34.56.78"),
-					resource.TestCheckResourceAttr(firstResourceName, "subnet.0.last", "12.34.56.78"),
-					resource.TestCheckResourceAttr(secondResourceName, "subnet.#", "1"),
+					resource.TestCheckResourceAttr(secondResourceName, "string_subnet.#", "1"),
+					resource.TestCheckResourceAttr(secondResourceName, "string_subnet.0", "12.34.56.78-12.34.56.78"),
 				),
 			},
 		},
@@ -232,7 +231,8 @@ func TestAccAzureRMTrafficManagerEndpoint_updateCustomeHeaders(t *testing.T) {
 					resource.TestCheckResourceAttr(firstResourceName, "custom_header.#", "1"),
 					resource.TestCheckResourceAttr(firstResourceName, "custom_header.0.name", "header"),
 					resource.TestCheckResourceAttr(firstResourceName, "custom_header.0.value", "www.bing.com"),
-					resource.TestCheckResourceAttr(secondResourceName, "custom_header.#", "0"),
+					resource.TestCheckResourceAttr(secondResourceName, "string_header.#", "1"),
+					resource.TestCheckResourceAttr(secondResourceName, "string_header.0", "happy:daily.com"),
 				),
 			},
 			{
@@ -240,7 +240,8 @@ func TestAccAzureRMTrafficManagerEndpoint_updateCustomeHeaders(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testCheckAzureRMTrafficManagerEndpointExists(firstResourceName),
 					testCheckAzureRMTrafficManagerEndpointExists(secondResourceName),
-					resource.TestCheckResourceAttr(firstResourceName, "custom_header.#", "0"),
+					resource.TestCheckResourceAttr(firstResourceName, "string_header.#", "1"),
+					resource.TestCheckResourceAttr(firstResourceName, "string_header", "happy:daily.com"),
 					resource.TestCheckResourceAttr(secondResourceName, "custom_header.#", "1"),
 					resource.TestCheckResourceAttr(secondResourceName, "custom_header.0.name", "header"),
 					resource.TestCheckResourceAttr(secondResourceName, "custom_header.0.value", "www.bing.com"),
@@ -842,10 +843,7 @@ resource "azurerm_traffic_manager_endpoint" "testExternalNew" {
   target              = "www.terraform.io"
   profile_name        = "${azurerm_traffic_manager_profile.test.name}"
   resource_group_name = "${azurerm_resource_group.test.name}"
-	subnet {
-		first = "12.34.56.78"
-		last = "12.34.56.78"
-	}
+	string_subnet = ["12.34.56.78-12.34.56.78"]
 }
 `, rInt, location, rInt, rInt, rInt, rInt)
 }
@@ -892,6 +890,7 @@ resource "azurerm_traffic_manager_endpoint" "testExternalNew" {
   target              = "www.terraform.io"
   profile_name        = "${azurerm_traffic_manager_profile.test.name}"
   resource_group_name = "${azurerm_resource_group.test.name}"
+	string_header = ["happy:daily.com"]
 }
 `, rInt, location, rInt, rInt, rInt, rInt)
 }
@@ -926,6 +925,7 @@ resource "azurerm_traffic_manager_endpoint" "testExternal" {
   target              = "terraform.io"
   profile_name        = "${azurerm_traffic_manager_profile.test.name}"
   resource_group_name = "${azurerm_resource_group.test.name}"
+	string_header = ["happy:daily.com"]
 }
 
 resource "azurerm_traffic_manager_endpoint" "testExternalNew" {
