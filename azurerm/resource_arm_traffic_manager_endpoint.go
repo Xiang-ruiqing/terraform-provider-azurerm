@@ -401,23 +401,21 @@ func getArmTrafficManagerEndpointProperties(d *schema.ResourceData) *trafficmana
 		subnetMappings = append(subnetMappings, subnetNew)
 	}
 	subnet_compact_list := d.Get("string_subnet").([]interface{})
-	ip_regexp := regexp.MustCompile("([0-9]{1,3}\\.){3}[0-9]{1,3}")
-	mask_regexp := regexp.MustCompile("/[0-9]{1,2}")
 	for _, subnetCompact := range subnet_compact_list {
-		ipCompact := ip_regexp.FindAllString(subnetCompact.(string), -1)
 		var subnetNew trafficmanager.EndpointPropertiesSubnetsItem
-		if len(ipCompact) == 1 {
-			subnetMask := mask_regexp.FindString(subnetCompact.(string))[1:]
-			scope, _ := strconv.Atoi(subnetMask)
+		CIDRcomponents := strings.Split(subnetCompact.(string), "/")
+		RANGEcomponents := strings.Split(subnetCompact.(string), "-")
+		if len(CIDRcomponents) == 2 {
+			scope, _ := strconv.Atoi(CIDRcomponents[1])
 			subnetScope := int32(scope)
 			subnetNew = trafficmanager.EndpointPropertiesSubnetsItem{
-				First: &ipCompact[0],
+				First: &CIDRcomponents[0],
 				Scope: &subnetScope,
 			}
 		} else {
 			subnetNew = trafficmanager.EndpointPropertiesSubnetsItem{
-				First: &ipCompact[0],
-				Last:  &ipCompact[1],
+				First: &RANGEcomponents[0],
+				Last:  &RANGEcomponents[1],
 			}
 		}
 		subnetMappings = append(subnetMappings, subnetNew)
